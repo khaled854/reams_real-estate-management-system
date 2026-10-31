@@ -1,0 +1,521 @@
+### ============================================================
+### Real Estate Management System — REST API Tests
+### Compatible with: VS Code REST Client extension
+###                  JetBrains HTTP Client
+###
+### Setup:
+###   1. Start the backend:  cd backend && npm run dev
+###   2. Run database.sql to seed the default admin user
+###   3. Execute "Login as Admin" first — copy the returned
+###      accessToken and paste it in @adminToken below
+###   4. Execute requests top-to-bottom in dependency order
+### ============================================================
+
+@baseUrl    = http://localhost:5000/api/v1
+@adminToken = PASTE_ACCESS_TOKEN_HERE
+@empToken   = PASTE_EMPLOYEE_TOKEN_HERE
+
+
+### ============================================================
+### SECTION 0 — Health & Status
+### ============================================================
+
+### 0.1 Health check (no auth)
+GET http://localhost:5000/health
+Accept: application/json
+
+###
+
+### 0.2 API status
+GET {{baseUrl}}/status
+Accept: application/json
+
+
+### ============================================================
+### SECTION 1 — AUTH
+### ============================================================
+
+### 1.1 Register (first admin bootstrap)
+# @name register
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "name":     "System Administrator",
+  "email":    "admin@company.local",
+  "password": "Admin@1234",
+  "role":     "admin",
+  "phone":    "+966 50 000 0001"
+}
+
+###
+
+### 1.2 Login as Admin
+# @name loginAdmin
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email":    "admin@company.local",
+  "password": "Admin@1234"
+}
+
+###
+
+### 1.3 Get current user profile
+GET {{baseUrl}}/auth/me
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 1.4 Refresh access token
+POST {{baseUrl}}/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "PASTE_REFRESH_TOKEN_HERE"
+}
+
+###
+
+### 1.5 Change own password
+POST {{baseUrl}}/auth/change-password
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "current_password": "Admin@1234",
+  "new_password":     "Admin@5678"
+}
+
+###
+
+### 1.6 Logout
+POST {{baseUrl}}/auth/logout
+Authorization: Bearer {{adminToken}}
+
+
+### ============================================================
+### SECTION 2 — USERS  (Admin only)
+### ============================================================
+
+### 2.1 List all users
+GET {{baseUrl}}/users
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 2.2 List users — filter by role
+GET {{baseUrl}}/users?role=employee&page=1&limit=10
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 2.3 Create an employee
+# @name createEmployee
+POST {{baseUrl}}/users
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "name":     "Sara Al-Rashid",
+  "email":    "sara@company.local",
+  "password": "Employee@1234",
+  "role":     "employee",
+  "phone":    "+966 50 000 0002"
+}
+
+###
+
+### 2.4 Get user by ID
+GET {{baseUrl}}/users/2
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 2.5 Update user
+PUT {{baseUrl}}/users/2
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "name":  "Sara Mohammed Al-Rashid",
+  "phone": "+966 50 000 0099"
+}
+
+###
+
+### 2.6 Admin reset password
+PATCH {{baseUrl}}/users/2/password
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "password": "NewPass@9999"
+}
+
+###
+
+### 2.7 Deactivate user
+PATCH {{baseUrl}}/users/2/deactivate
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 2.8 Activate user
+PATCH {{baseUrl}}/users/2/activate
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 2.9 Delete user
+DELETE {{baseUrl}}/users/2
+Authorization: Bearer {{adminToken}}
+
+
+### ============================================================
+### SECTION 3 — PROPERTIES
+### ============================================================
+
+### 3.1 Get property types (lookup dropdown)
+GET {{baseUrl}}/properties/types
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 3.2 List properties — default page
+GET {{baseUrl}}/properties
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 3.3 List properties — with filters
+GET {{baseUrl}}/properties?status=available&listing_type=sale&min_price=100000&max_price=1000000&page=1&limit=10
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 3.4 Search properties
+GET {{baseUrl}}/properties?search=villa&sort=price&order=ASC
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 3.5 Create a property
+# @name createProperty
+POST {{baseUrl}}/properties
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "type_id":        1,
+  "type":           "Apartment",
+  "title":          "Modern 3BR Apartment in Riyadh",
+  "description":    "Spacious and fully furnished apartment in the heart of Riyadh with premium finishes.",
+  "location":       "Riyadh",
+  "address":        "12 King Fahd Road, Al Olaya District, Riyadh",
+  "area":           185.5,
+  "rooms":          5,
+  "bedrooms":       3,
+  "bathrooms":      2,
+  "floor":          7,
+  "price":          750000,
+  "payment_method": "cash",
+  "owner_name":     "Khalid Al-Otaibi",
+  "owner_phone":    "+966 55 123 4567",
+  "listing_type":   "sale",
+  "status":         "available",
+  "is_featured":    true
+}
+
+###
+
+### 3.6 Get single property (ID from 3.5)
+GET {{baseUrl}}/properties/1
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 3.7 Update a property
+PUT {{baseUrl}}/properties/1
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "price":       720000,
+  "description": "Updated: price reduced. Spacious apartment with panoramic city view."
+}
+
+###
+
+### 3.8 Change property status
+PATCH {{baseUrl}}/properties/1/status
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "status": "reserved"
+}
+
+###
+
+### 3.9 Get property images
+GET {{baseUrl}}/properties/1/images
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 3.10 Upload property images (multipart)
+# NOTE: change the file paths to valid files on your machine
+POST {{baseUrl}}/properties/1/images
+Authorization: Bearer {{adminToken}}
+Content-Type: multipart/form-data; boundary=----boundary
+
+------boundary
+Content-Disposition: form-data; name="images"; filename="photo1.jpg"
+Content-Type: image/jpeg
+
+< ./test-assets/photo1.jpg
+------boundary--
+
+###
+
+### 3.11 Delete a property image
+DELETE {{baseUrl}}/properties/1/images/1
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 3.12 Delete a property
+DELETE {{baseUrl}}/properties/1
+Authorization: Bearer {{adminToken}}
+
+
+### ============================================================
+### SECTION 4 — CUSTOMERS
+### ============================================================
+
+### 4.1 Get CRM pipeline counts
+GET {{baseUrl}}/customers/pipeline
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 4.2 List all customers
+GET {{baseUrl}}/customers
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 4.3 List customers — filter by status
+GET {{baseUrl}}/customers?status=new&page=1&limit=10
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 4.4 Search customers
+GET {{baseUrl}}/customers?search=Ahmed&sort=created_at&order=DESC
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 4.5 Create a customer
+# @name createCustomer
+POST {{baseUrl}}/customers
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "name":          "Ahmed Al-Mansour",
+  "phone":         "+966 50 987 6543",
+  "email":         "ahmed.mansour@example.com",
+  "property_type": "Apartment",
+  "location":      "Riyadh",
+  "budget":        800000,
+  "budget_min":    500000,
+  "notes":         "Looking for a 3-bedroom apartment in North Riyadh. Prefers new buildings.",
+  "status":        "new",
+  "source":        "walk-in"
+}
+
+###
+
+### 4.6 Get single customer
+GET {{baseUrl}}/customers/1
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 4.7 Update a customer
+PUT {{baseUrl}}/customers/1
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "budget":  900000,
+  "notes":   "Updated budget. Also interested in villas.",
+  "location": "Riyadh, North"
+}
+
+###
+
+### 4.8 Change customer pipeline status
+PATCH {{baseUrl}}/customers/1/status
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "status": "interested"
+}
+
+###
+
+### 4.9 Assign customer to employee (admin only)
+PATCH {{baseUrl}}/customers/1/assign
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "employee_id": 2
+}
+
+###
+
+### 4.10 Employee lists own customers
+GET {{baseUrl}}/customers
+Authorization: Bearer {{empToken}}
+
+###
+
+### 4.11 Delete a customer
+DELETE {{baseUrl}}/customers/1
+Authorization: Bearer {{adminToken}}
+
+
+### ============================================================
+### SECTION 5 — REPORTS
+### ============================================================
+
+### 5.1 Dashboard KPI stats
+GET {{baseUrl}}/reports/dashboard
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 5.2 Properties report (all time)
+GET {{baseUrl}}/reports/properties
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 5.3 Properties report — date range
+GET {{baseUrl}}/reports/properties?from_date=2026-01-01&to_date=2026-12-31
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 5.4 Properties report — single agent
+GET {{baseUrl}}/reports/properties?agent_id=1
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 5.5 Customers report
+GET {{baseUrl}}/reports/customers
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 5.6 Customers report — filter by employee
+GET {{baseUrl}}/reports/customers?employee_id=2
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 5.7 Financials report (admin only)
+GET {{baseUrl}}/reports/financials
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 5.8 Financials report — date range
+GET {{baseUrl}}/reports/financials?from_date=2026-01-01&to_date=2026-06-30
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 5.9 Agent performance report (admin only)
+GET {{baseUrl}}/reports/agents
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 5.10 Agent performance — date range
+GET {{baseUrl}}/reports/agents?from_date=2026-01-01&to_date=2026-12-31
+Authorization: Bearer {{adminToken}}
+
+
+### ============================================================
+### SECTION 6 — ERROR CASES (should return errors, not 500s)
+### ============================================================
+
+### 6.1 Login with wrong password  → 401
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email":    "admin@company.local",
+  "password": "WrongPassword1"
+}
+
+###
+
+### 6.2 Access protected route without token  → 401
+GET {{baseUrl}}/auth/me
+
+###
+
+### 6.3 Employee tries to access user management  → 403
+GET {{baseUrl}}/users
+Authorization: Bearer {{empToken}}
+
+###
+
+### 6.4 Create property — missing required field  → 422
+POST {{baseUrl}}/properties
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "title": "Incomplete Property"
+}
+
+###
+
+### 6.5 Get non-existent property  → 404
+GET {{baseUrl}}/properties/99999
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 6.6 Register with duplicate email  → 409
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "name":     "Duplicate Admin",
+  "email":    "admin@company.local",
+  "password": "Admin@1234",
+  "role":     "admin"
+}
+
+###
+
+### 6.7 Create customer — missing required phone  → 422
+POST {{baseUrl}}/customers
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "name": "No Phone Customer"
+}

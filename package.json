@@ -1,0 +1,26 @@
+{
+  "name": "rems",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Real Estate Management System — Production root",
+  "scripts": {
+    "install:all": "npm install --prefix backend && npm install --prefix frontend",
+    "build": "node scripts/build.js",
+    "start": "npm start --prefix backend",
+    "dev:backend": "npm run dev --prefix backend",
+    "dev:frontend": "npm run dev --prefix frontend",
+    "seed": "npm run seed --prefix backend",
+    "check-db": "npm run check-db --prefix backend 2>nul || node backend/scripts/check-db.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.62.1",
+    "@types/node": "^26.4.0",
+    "explorbot": "^0.3.5"
+  },
+  "dependencies": {
+    "@ai-sdk/anthropic": "^4.0.46"
+  }
+}
