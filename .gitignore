@@ -7,10 +7,10 @@ node_modules/
 .pnp
 .pnp.js
 
-# Build outputs
+# Build outputs (frontend/dist is temporary; backend/public is committed)
 dist/
-build/
 .vite/
+build/
 
 # Environment files (NEVER commit real env files)
 .env
@@ -53,13 +53,15 @@ uploads/documents/*
 uploads/avatars/*
 uploads/videos/*
 !uploads/**/.gitkeep
+backend/uploads/properties/*
+backend/uploads/documents/*
+backend/uploads/avatars/*
+backend/uploads/videos/*
+!backend/uploads/**/.gitkeep
 
 # Database backups
 database/backups/*.sql
 !database/backups/.gitkeep
-
-# Production built frontend served by backend
-backend/public/
 
 # Coverage reports
 coverage/
@@ -81,24 +83,12 @@ ai-agent/.venv/
 ai-agent/reports/
 ai-agent/.env
 
-# Suitest test artifacts — credentials and logs contain sensitive data
-.suitest/credentials.json
-.suitest/logs/*.log
-.suitest/suitest.db
+# Suitest test artifacts
+.suitest/
 
 # Semantic review artifacts
 semantic-review/
 
-# Suitest test artifacts
-.suitest/
-
-node_modules/
-.env
+# Output and archive
 output/
-playwright-report/
-test-results/
-.suitest/
-
-backend/uploads/
-uploads/
 _archive/
