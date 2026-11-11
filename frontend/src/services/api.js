@@ -67,8 +67,14 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    // Don't retry the refresh endpoint itself
+    // Don't retry the refresh endpoint itself — just clear auth and redirect
     if (originalRequest.url?.includes('/auth/refresh')) {
+      clearAuthAndRedirect();
+      return Promise.reject(error);
+    }
+
+    // Don't retry /auth/me called on app init — just clear auth silently
+    if (originalRequest.url?.includes('/auth/me')) {
       clearAuthAndRedirect();
       return Promise.reject(error);
     }

@@ -444,40 +444,20 @@ echo  [OK] Backend packages ready.
 echo.
 
 :: ----------------------------------------------------------------
-:: [8] CHECK PORT AVAILABILITY
+:: [8] CHECK PORT AVAILABILITY — Kill old process automatically
 :: ----------------------------------------------------------------
 echo  [8/9] Checking port %APP_PORT%...
 
 netstat -ano 2>nul | findstr "0.0.0.0:%APP_PORT%" | findstr "LISTENING" >nul 2>&1
 if %errorlevel% equ 0 (
-    echo.
-    echo  Port %APP_PORT% is already in use.
-    echo  The REMS server may already be running.
-    echo.
-    echo  Choose an option:
-    echo    [1] Open browser now (server is already running - recommended)
-    echo    [2] Stop the current server and restart it
-    echo    [3] Exit without doing anything
-    echo.
-    set /p "CHOICE=Your choice (1, 2, or 3): "
-
-    if "!CHOICE!"=="1" goto :open_browser_now
-    if "!CHOICE!"=="3" (
-        echo  Exiting.
-        exit /b 0
-    )
-
-    :: Option 2: kill existing process
-    echo.
-    echo  Stopping existing server on port %APP_PORT%...
+    echo  Port %APP_PORT% is busy. Stopping old server automatically...
     for /f "tokens=5" %%p in ('netstat -ano 2^>nul ^| findstr "0.0.0.0:%APP_PORT%" ^| findstr "LISTENING"') do (
         if "%%p" neq "" (
             taskkill /PID %%p /F >nul 2>&1
-            echo  Stopped PID %%p
+            echo  Stopped old server (PID %%p^)
         )
     )
-    timeout /t 3 /nobreak >nul
-    echo  [OK] Port %APP_PORT% is now free.
+    timeout /t 2 /nobreak >nul
 )
 
 echo  [OK] Port %APP_PORT% is available.
