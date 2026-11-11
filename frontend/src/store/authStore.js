@@ -108,22 +108,17 @@ const useAuthStore = create(
         try {
           const user = await getMeRequest();
           set({ user, isAuthenticated: true, isLoading: false });
-        } catch (err) {
-          const status = err?.response?.status;
-          if (status === 401 || status === 403) {
-            // Real auth failure — token is invalid or revoked
-            set({
-              user:            null,
-              accessToken:     null,
-              isAuthenticated: false,
-              isLoading:       false,
-            });
-          } else {
-            // Network error, server error, or CORS block:
-            // Keep the existing session — the token may still be valid.
-            // The user will retry next time they make an API call.
-            set({ isLoading: false });
-          }
+        } catch {
+          // ANY error during initial user load (401, 403, 400 from refresh
+          // failure, network error) should silently clear the session.
+          // The user will be redirected to /login by the axios interceptor
+          // or will simply see the login page. No error toast should show.
+          set({
+            user:            null,
+            accessToken:     null,
+            isAuthenticated: false,
+            isLoading:       false,
+          });
         }
       },
 
