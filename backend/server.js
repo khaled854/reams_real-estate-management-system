@@ -12,45 +12,48 @@ require('dotenv').config();
 const app                   = require('./app');
 const logger                = require('./src/utils/logger');
 const { testConnection }    = require('./src/config/database');
-const net                   = require('net');
+const { execSync }          = require('child_process');
 
-const PORT = process.env.PORT || 5000;
+const PORT = parseInt(process.env.PORT) || 5000;
 const HOST = process.env.HOST || '0.0.0.0';
 
 // ---------------------------------------------------------------------------
 // Kill any process already using the port before we try to bind.
-// This prevents EADDRINUSE when the previous Node process didn't exit cleanly.
+// Works on Windows (netstat + taskkill) and Linux/Mac (lsof / fuser).
 // ---------------------------------------------------------------------------
-function freePort(port) {
-  return new Promise((resolve) => {
-    const tester = net.createServer();
-    tester.once('error', (err) => {
-      if (err.code === 'EADDRINUSE') {
-        // Port is busy — try to connect and destroy the socket to release it.
-        // On Windows we can't send SIGTERM to other processes easily,
-        // so we just log and let the OS time-wait expire (or the user
-        // manually kills the old process).  In practice, re-running
-        // `npm start` a second time after a few seconds always works.
-        logger.warn(`Port ${port} is already in use. Waiting 2 s for it to free…`);
-        setTimeout(resolve, 2000);
-      } else {
-        resolve();
+function killPort(port) {
+  try {
+    if (process.platform === 'win32') {
+      // Find PID listening on the port and kill it
+      const result = execSync(
+        `netstat -ano | findstr ":${port} " | findstr "LISTENING"`,
+        { encoding: 'utf8', stdio: ['pipe', 'pipe', 'ignore'] }
+      );
+      const lines = result.trim().split('\n');
+      const pids = new Set();
+      for (const line of lines) {
+        const parts = line.trim().split(/\s+/);
+        const pid = parts[parts.length - 1];
+        if (pid && pid !== '0' && /^\d+$/.test(pid)) pids.add(pid);
       }
-      tester.close();
-    });
-    tester.once('listening', () => {
-      tester.close(resolve); // port is free
-    });
-    tester.listen(port, '0.0.0.0');
-  });
+      for (const pid of pids) {
+        try {
+          execSync(`taskkill /PID ${pid} /F`, { stdio: 'ignore' });
+          logger.info(`Killed old process on port ${port} (PID ${pid})`);
+        } catch { /* already gone */ }
+      }
+    } else {
+      execSync(`fuser -k ${port}/tcp`, { stdio: 'ignore' });
+    }
+  } catch { /* port was already free */ }
 }
 
 // ---------------------------------------------------------------------------
-// Startup sequence: verify DB, then bind the HTTP server
+// Startup sequence: free port → verify DB → bind HTTP server
 // ---------------------------------------------------------------------------
 async function start() {
-  // 0. Make sure the port is available
-  await freePort(PORT);
+  // 0. Free the port first
+  killPort(PORT);
 
   // 1. Verify MySQL connection before accepting any traffic
   await testConnection();
