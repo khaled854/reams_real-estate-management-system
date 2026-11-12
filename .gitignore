@@ -1,94 +1,72 @@
-# =============================================================================
+﻿# =============================================================================
 # Real Estate Management System — .gitignore
 # =============================================================================
 
-# Dependencies
+# ── Node.js ──────────────────────────────────────────────────
 node_modules/
-.pnp
-.pnp.js
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
-# Build outputs (frontend/dist is temporary; backend/public is committed)
-dist/
+# ── Build outputs ─────────────────────────────────────────────
+# frontend/dist is temporary (backend/public has the committed build)
+frontend/dist/
+frontend/.vite/
 .vite/
-build/
 
-# Environment files (NEVER commit real env files)
+# ── Environment files (NEVER commit secrets) ──────────────────
 .env
 .env.local
+.env.development
 .env.development.local
 .env.test.local
 .env.production.local
-
-# Backend env files — contain real secrets
 backend/.env
 backend/.env.production
 frontend/.env.production
 
-# Logs — may contain sensitive runtime data
-logs/
+# ── Logs ──────────────────────────────────────────────────────
 *.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-START_SYSTEM.log
+logs/
+backend/logs/*.log
 
-# OS files
+# ── Uploaded media (user content, not source code) ────────────
+backend/uploads/properties/*
+backend/uploads/videos/*
+backend/uploads/documents/*
+backend/uploads/avatars/*
+!backend/uploads/**/.gitkeep
+
+# ── Database backups ──────────────────────────────────────────
+database/backups/*.sql
+!database/backups/.gitkeep
+
+# ── OS files ──────────────────────────────────────────────────
 .DS_Store
 Thumbs.db
 desktop.ini
 
-# Editor directories
+# ── Editor ────────────────────────────────────────────────────
 .vscode/
 .idea/
 *.suo
-*.ntvs*
-*.njsproj
-*.sln
 *.sw?
 
-# Uploads (keep folder structure, ignore contents)
-uploads/properties/*
-uploads/documents/*
-uploads/avatars/*
-uploads/videos/*
-!uploads/**/.gitkeep
-backend/uploads/properties/*
-backend/uploads/documents/*
-backend/uploads/avatars/*
-backend/uploads/videos/*
-!backend/uploads/**/.gitkeep
+# ── Testing tools (development only) ─────────────────────────
+test-results/
+playwright-report/
+blob-report/
+/coverage/
 
-# Database backups
-database/backups/*.sql
-!database/backups/.gitkeep
+# ── Development-only tools ────────────────────────────────────
+ai-agent/
+.suitest/
+semantic-review/
+output/
+_archive/
+QA_REPORT/
 
-# Coverage reports
-coverage/
-
-# Temp files
+# ── Temp ──────────────────────────────────────────────────────
 *.tmp
 *.temp
 *.cache
-
-# Playwright
-/test-results/
-/playwright-report/
-/blob-report/
-/playwright/.cache/
-/playwright/.auth/
-
-# AI agent development directory — not part of deliverable
-ai-agent/.venv/
-ai-agent/reports/
-ai-agent/.env
-
-# Suitest test artifacts
-.suitest/
-
-# Semantic review artifacts
-semantic-review/
-
-# Output and archive
-output/
-_archive/
