@@ -1,15 +1,15 @@
-import axios from 'axios';
+﻿import axios from 'axios';
 
 /**
  * api.js
  * Central Axios instance.
- * — Attaches JWT Bearer token to every request.
- * — Handles 401s with a single silent token-refresh retry.
- * — Falls back to /login on refresh failure.
+ * â€” Attaches JWT Bearer token to every request.
+ * â€” Handles 401s with a single silent token-refresh retry.
+ * â€” Falls back to /login on refresh failure.
  *
  * baseURL = VITE_API_BASE_URL (set to '/api' in .env).
- * The Vite dev-server proxy forwards /api/* → http://localhost:5000,
- * so all requests stay same-origin in the browser — no CORS preflight.
+ * The Vite dev-server proxy forwards /api/* â†’ http://localhost:5000,
+ * so all requests stay same-origin in the browser â€” no CORS preflight.
  */
 
 const api = axios.create({
@@ -26,7 +26,7 @@ const api = axios.create({
   withCredentials: true,
 });
 
-// ── Request interceptor ────────────────────────────────────
+// â”€â”€ Request interceptor â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 api.interceptors.request.use(
   (config) => {
     // Read token from Zustand-persisted localStorage key
@@ -38,7 +38,7 @@ api.interceptors.request.use(
           config.headers.Authorization = `Bearer ${state.accessToken}`;
         }
       } catch {
-        // malformed storage — ignore
+        // malformed storage â€” ignore
       }
     }
     if (import.meta.env.VITE_DEBUG_API === 'true') {
@@ -49,7 +49,7 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// ── Response interceptor — silent refresh ──────────────────
+// â”€â”€ Response interceptor â€” silent refresh â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 let isRefreshing = false;
 let pendingQueue = []; // queued requests waiting for a new token
 
@@ -67,13 +67,20 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    // Don't retry the refresh endpoint itself — just clear auth and redirect
+    // Don't retry the refresh endpoint itself â€” just clear auth and redirect
     if (originalRequest.url?.includes('/auth/refresh')) {
       clearAuthAndRedirect();
       return Promise.reject(error);
     }
 
-    // Don't retry /auth/me called on app init — just clear auth silently
+    // Don't retry /auth/login — wrong password should NOT trigger a refresh attempt
+    // Without this check, a failed login (401) causes the interceptor to call /auth/refresh
+    // which returns 400 'Refresh token is required' (no cookie) — visible as a toast error
+    if (originalRequest.url?.includes('/auth/login')) {
+      return Promise.reject(error);
+    }
+
+    // Don't retry /auth/me called on app init â€” just clear auth silently
     if (originalRequest.url?.includes('/auth/me')) {
       clearAuthAndRedirect();
       return Promise.reject(error);
@@ -97,17 +104,17 @@ api.interceptors.response.use(
 
     try {
       // The refresh token is sent automatically via the HttpOnly cookie.
-      // We do NOT read or send it from localStorage — it lives in the
+      // We do NOT read or send it from localStorage â€” it lives in the
       // cookie exclusively and is never accessible to JavaScript.
       const res = await api.post(
         '/v1/auth/refresh',
-        {} // empty body — token comes from HttpOnly cookie only
+        {} // empty body â€” token comes from HttpOnly cookie only
       );
 
       const { accessToken: newAccess } = res.data.data;
 
       // Persist new access token into Zustand's localStorage entry.
-      // Only the access token is stored in localStorage — never the refresh token.
+      // Only the access token is stored in localStorage â€” never the refresh token.
       const stored = localStorage.getItem('rems-auth');
       if (stored) {
         try {
@@ -123,7 +130,7 @@ api.interceptors.response.use(
       try {
         const storeState = _getAuthStore();
         if (storeState) storeState.refreshSession(newAccess);
-      } catch { /* non-fatal — token already persisted in localStorage */ }
+      } catch { /* non-fatal â€” token already persisted in localStorage */ }
 
       originalRequest.headers.Authorization = `Bearer ${newAccess}`;
       processQueue(null, newAccess);
@@ -173,9 +180,10 @@ function _getAuthStore() {
     // We import authStore at the top of authService.js, but api.js cannot
     // import it at module level without a circular reference.
     // The store registers itself on window.__remsAuthStore during init
-    // only if this accessor exists — see authStore.js bootstrapStore().
+    // only if this accessor exists â€” see authStore.js bootstrapStore().
     return window.__remsAuthStore?.getState?.() ?? null;
   } catch {
     return null;
   }
 }
+
